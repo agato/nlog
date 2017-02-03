@@ -1,23 +1,21 @@
-package cmd
+package ncmd
 
 import (
 	"fmt"
-	"os/exec"
 	"log"
+	"os/exec"
 )
 
-type CmdUtil struct {
-	Out  string
+type NCmd struct {
+	Out string
 }
 
-
-
 //run ssh command
-func (u *CmdUtil) Execute(cmd string, args ...string) error {
+func (u *NCmd) Execute(cmd string, args ...string) error {
 
 	log.Println("log:", cmd, args)
 
-	out,err := exec.Command(cmd, args...).Output()
+	out, err := exec.Command(cmd, args...).Output()
 
 	if err != nil {
 		log.Println("Error running:", err.Error())
