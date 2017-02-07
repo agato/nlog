@@ -9,7 +9,6 @@ import (
 	"runtime"
 	"sync"
 	"time"
-	"github.com/agato/nlog"
 )
 
 const (
