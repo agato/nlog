@@ -129,7 +129,7 @@ func (l *Logging) Info(v string) {
 
 
 func Info(v ...interface{}) {
-	Logger.Output(2, fmt.Sprint(v...))
+	Logger.Info(fmt.Sprint(v...))
 }
 
 func Debug(v ...interface{}) {
