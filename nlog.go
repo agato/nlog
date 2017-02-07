@@ -124,13 +124,12 @@ func (l *Logging) SetDebugFlags(debugFlag int) {
 
 func (l *Logging) Info(v ...interface{}) {
 	l.prefix = "[INFO]"
-	l.Output(2, fmt.Sprint(v...))
+	l.Output(l.flag, fmt.Sprint(v...))
 }
 
 
 func Info(v ...interface{}) {
-	Logger.prefix = "[INFO]"
-	Logger.Output(2, fmt.Sprint(v...))
+	Logger.Output(2, v)
 }
 
 func Debug(v ...interface{}) {
