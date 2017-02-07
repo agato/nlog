@@ -120,13 +120,19 @@ func (l *Logger) SetDebugFlags(debugFlag int) {
 	l.debugFlag = debugFlag
 }
 
+
+func (l *Logger) Info(v ...interface{}) {
+	l.prefix = "[INFO]"
+	l.Output(2, fmt.Sprint(v...))
+}
+
+
 func Info(v ...interface{}) {
-	std.prefix = "[info]"
-	std.Output(2, fmt.Sprint(v...))
+	std.Info(v)
 }
 
 func Debug(v ...interface{}) {
-	std.prefix = "[debug]"
+	std.prefix = "[DEBUG]"
 	if std.debugFlag != DebugOn {
 		return
 	}
@@ -134,12 +140,12 @@ func Debug(v ...interface{}) {
 }
 
 func Error(v ...interface{}) {
-	std.prefix = "[error]"
+	std.prefix = "[ERROR]"
 	std.Output(2, fmt.Sprint(v...))
 }
 
 func Fatal(v ...interface{}) {
-	std.prefix = "[fatal]"
+	std.prefix = "[FATAL]"
 	std.Output(2, fmt.Sprint(v...))
 	os.Exit(1)
 }
