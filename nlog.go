@@ -23,12 +23,17 @@ const (
 )
 
 //log write variable
-var Logger = New(os.Stderr, "", LstdFlags)
+var (
+	Logger *Logger
+	std *Logger
+	initLock    sync.Mutex
+	initialized = false
+)
 
-type Logging struct {
+type Logger struct {
 	mu        sync.Mutex // ensures atomic writes; protects the following fields
 	prefix    string     // prefix to write at beginning of each line
-	Flag      int        // properties
+	flag      int        // properties
 	out       io.Writer  // destination for output
 	buf       []byte     // for accumulating text to write
 	debugFlag int        // 0 or 1 1 is debug
@@ -36,26 +41,41 @@ type Logging struct {
 }
 
 // log initial set
-func New(out io.Writer, prefix string, flag int) *Logging {
-	return &Logging{out: out, prefix: prefix, Flag: flag}
+func New(out io.Writer, prefix string, flag int) *Logger {
+
+	initLock.Lock()
+
+	if initialized {
+		fmt.Printf("already mysql init setting")
+		return
+	}
+
+	Logger = &Logger{out: out, prefix: prefix, flag: flag}
+
+	std = Logger
+
+	initialized = true
+
+
+
 }
 
 //write lock
-func (l *Logging) SetOutput(w io.Writer) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	l.out = w
+func (l *Logger) SetOutput(w io.Writer) {
+	std.mu.Lock()
+	defer std.mu.Unlock()
+	std.out = w
 }
 
 //write
-func (l *Logging) Output(calldepth int, s string) error {
+func (l *Logger) Output(calldepth int, s string) error {
 
 	now := time.Now()
 	var file string
 	var line int
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	if l.Flag&(Lshortfile|Llongfile) != 0 {
+	if l.flag&(Lshortfile|Llongfile) != 0 {
 		// release lock while getting caller info - it's expensive.
 		l.mu.Unlock()
 		var ok bool
@@ -82,8 +102,8 @@ func (l *Logging) Output(calldepth int, s string) error {
 //ファイルに対して書き込みます
 func setOutputFile(buf []byte) {
 
-	if Logger.filePath != "" {
-		f, err := os.OpenFile(Logger.filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if std.filePath != "" {
+		f, err := os.OpenFile(std.filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
 			log.Fatal("error opening file :", err.Error())
 		}
@@ -97,88 +117,69 @@ func setOutputFile(buf []byte) {
 	}
 }
 
-
 //出力フォーマットを設定します
 func SetFlags(flag int) {
-	Logger.SetFlags(flag)
-}
-
-func GetFlags() int {
-	return Logger.GetFlags()
+	std.SetFlags(flag)
 }
 
 //デバックの出力を設定します
 //1 = debug on
 func SetDebugFlags(debugFlag int) {
-	Logger.SetDebugFlags(debugFlag)
+	std.SetDebugFlags(debugFlag)
 }
 
-func (l *Logging) SetFlags(flag int) {
-	Logger.mu.Lock()
-	defer Logger.mu.Unlock()
-	Logger.Flag = flag
-}
-
-func (l *Logging) GetFlags() int{
+func (l *Logger) SetFlags(flag int) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	return l.Flag
+	l.flag = flag
 }
 
-func (l *Logging) SetDebugFlags(debugFlag int) {
+func (l *Logger) SetDebugFlags(debugFlag int) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.debugFlag = debugFlag
 }
 
-
-func (l *Logging) Info(v ...interface{}) {
-	//l.SetFlags(Ldate | Ltime | Lshortfile)
-	l.prefix = "[INFOaaaaaaa]"
-	l.Output(2, fmt.Sprint(v...))
-}
-
-
 func Info(v ...interface{}) {
-	Logger.prefix = "[INFObbbbb]"
-	Logger.Output(1, fmt.Sprint(v...))
+	std.prefix = "[info]"
+	std.Output(2, fmt.Sprint(v...))
 }
 
 func Debug(v ...interface{}) {
-	Logger.prefix = "[DEBUG]"
-	if Logger.debugFlag != DebugOn {
+	std.prefix = "[debug]"
+	if std.debugFlag != DebugOn {
 		return
 	}
-	Logger.Output(2, fmt.Sprint(v...))
+	std.Output(2, fmt.Sprint(v...))
 }
 
 func Error(v ...interface{}) {
-	Logger.prefix = "[ERROR]"
-	Logger.Output(2, fmt.Sprint(v...))
+	std.prefix = "[error]"
+	std.Output(2, fmt.Sprint(v...))
 }
 
 func Fatal(v ...interface{}) {
-	Logger.prefix = "[FATAL]"
-	Logger.Output(2, fmt.Sprint(v...))
+	std.prefix = "[fatal]"
+	std.Output(2, fmt.Sprint(v...))
 	os.Exit(1)
 }
 
 //ファイル出力します
-func SetFilePath(filePath string) *Logging {
-	Logger.filePath = filePath
-	return Logger
+func SetFilePath(filePath string) *Logger {
+	std.filePath = filePath
+	return std
 }
 
 //---privete funcs---
 
 //フォーマットを設定します
-func (l *Logging) formatHeader(buf *[]byte, t time.Time, file string, line int) {
+func (l *Logger) formatHeader(buf *[]byte, t time.Time, file string, line int) {
 	*buf = append(*buf, l.prefix...)
-	if l.Flag&LUTC != 0 {
+	if l.flag&LUTC != 0 {
 		t = t.UTC()
 	}
-	if l.Flag&(Ldate|Ltime|Lmicroseconds) != 0 {
-		if l.Flag&Ldate != 0 {
+	if l.flag&(Ldate|Ltime|Lmicroseconds) != 0 {
+		if l.flag&Ldate != 0 {
 			year, month, day := t.Date()
 			itoa(buf, year, 4)
 			*buf = append(*buf, '/')
@@ -187,22 +188,22 @@ func (l *Logging) formatHeader(buf *[]byte, t time.Time, file string, line int) 
 			itoa(buf, day, 2)
 			*buf = append(*buf, ' ')
 		}
-		if l.Flag&(Ltime|Lmicroseconds) != 0 {
+		if l.flag&(Ltime|Lmicroseconds) != 0 {
 			hour, min, sec := t.Clock()
 			itoa(buf, hour, 2)
 			*buf = append(*buf, ':')
 			itoa(buf, min, 2)
 			*buf = append(*buf, ':')
 			itoa(buf, sec, 2)
-			if l.Flag&Lmicroseconds != 0 {
+			if l.flag&Lmicroseconds != 0 {
 				*buf = append(*buf, '.')
 				itoa(buf, t.Nanosecond()/1e3, 6)
 			}
 			*buf = append(*buf, ' ')
 		}
 	}
-	if l.Flag&(Lshortfile|Llongfile) != 0 {
-		if l.Flag&Lshortfile != 0 {
+	if l.flag&(Lshortfile|Llongfile) != 0 {
+		if l.flag&Lshortfile != 0 {
 			short := file
 			for i := len(file) - 1; i > 0; i-- {
 				if file[i] == '/' {
