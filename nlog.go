@@ -129,7 +129,7 @@ func (l *Logging) Info(v ...interface{}) {
 
 
 func Info(v ...interface{}) {
-	Logger.Output(2, v)
+	Logger.Output(2, v...)
 }
 
 func Debug(v ...interface{}) {
