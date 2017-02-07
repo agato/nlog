@@ -25,7 +25,7 @@ const (
 //log write variable
 var Logger = New(os.Stderr, "", LstdFlags)
 
-type Logger struct {
+type Logging struct {
 	mu        sync.Mutex // ensures atomic writes; protects the following fields
 	prefix    string     // prefix to write at beginning of each line
 	flag      int        // properties
@@ -36,19 +36,19 @@ type Logger struct {
 }
 
 // log initial set
-func New(out io.Writer, prefix string, flag int) *Logger {
-	return &Logger{out: out, prefix: prefix, flag: flag}
+func New(out io.Writer, prefix string, flag int) *Logging {
+	return &Logging{out: out, prefix: prefix, flag: flag}
 }
 
 //write lock
-func (l *Logger) SetOutput(w io.Writer) {
+func (l *Logging) SetOutput(w io.Writer) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.out = w
 }
 
 //write
-func (l *Logger) Output(calldepth int, s string) error {
+func (l *Logging) Output(calldepth int, s string) error {
 
 	now := time.Now()
 	var file string
@@ -92,7 +92,8 @@ func setOutputFile(buf []byte) {
 		bw := bufio.NewWriter(writer)
 		bw.Write(buf)
 		bw.Flush()
-		
+
+		//std.SetOutput(f)
 	}
 }
 
@@ -108,20 +109,20 @@ func SetDebugFlags(debugFlag int) {
 	Logger.SetDebugFlags(debugFlag)
 }
 
-func (l *Logger) SetFlags(flag int) {
+func (l *Logging) SetFlags(flag int) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.flag = flag
 }
 
-func (l *Logger) SetDebugFlags(debugFlag int) {
+func (l *Logging) SetDebugFlags(debugFlag int) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.debugFlag = debugFlag
 }
 
 
-func (l *Logger) Info(v ...interface{}) {
+func (l *Logging) Info(v ...interface{}) {
 	l.prefix = "[INFO]"
 	l.Output(2, fmt.Sprint(v...))
 }
@@ -152,14 +153,15 @@ func Fatal(v ...interface{}) {
 }
 
 //ファイル出力します
-func SetFilePath(filePath string) {
+func SetFilePath(filePath string) *Logging {
 	Logger.filePath = filePath
+	return Logger
 }
 
 //---privete funcs---
 
 //フォーマットを設定します
-func (l *Logger) formatHeader(buf *[]byte, t time.Time, file string, line int) {
+func (l *Logging) formatHeader(buf *[]byte, t time.Time, file string, line int) {
 	*buf = append(*buf, l.prefix...)
 	if l.flag&LUTC != 0 {
 		t = t.UTC()
