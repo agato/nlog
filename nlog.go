@@ -25,6 +25,8 @@ const (
 //log write variable
 var std = New(os.Stderr, "", LstdFlags)
 
+var NLogger = 1
+
 type Logger struct {
 	mu        sync.Mutex // ensures atomic writes; protects the following fields
 	prefix    string     // prefix to write at beginning of each line
@@ -42,9 +44,9 @@ func New(out io.Writer, prefix string, flag int) *Logger {
 
 //write lock
 func (l *Logger) SetOutput(w io.Writer) {
-	std.mu.Lock()
-	defer std.mu.Unlock()
-	std.out = w
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.out = w
 }
 
 //write
@@ -96,6 +98,7 @@ func setOutputFile(buf []byte) {
 		//std.SetOutput(f)
 	}
 }
+
 
 //出力フォーマットを設定します
 func SetFlags(flag int) {
