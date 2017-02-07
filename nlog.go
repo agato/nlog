@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"sync"
 	"time"
+	"github.com/agato/nlog"
 )
 
 const (
@@ -23,14 +24,9 @@ const (
 )
 
 //log write variable
-var (
-	Logger *Logging
-	std *Logging
-	initLock    sync.Mutex
-	initialized = false
-)
+var std = New(os.Stderr, "", Ldate | Ltime | Lshortfile)
 
-type Logging struct {
+type Logger struct {
 	mu        sync.Mutex // ensures atomic writes; protects the following fields
 	prefix    string     // prefix to write at beginning of each line
 	flag      int        // properties
@@ -41,34 +37,19 @@ type Logging struct {
 }
 
 // log initial set
-func New(out io.Writer, prefix string, flag int) {
-
-	initLock.Lock()
-
-	if initialized {
-		fmt.Printf("already mysql init setting")
-		return
-	}
-
-	Logger = &Logging{out: out, prefix: prefix, flag: flag}
-
-	std = Logger
-
-	fmt.Println(std.flag)
-
-	initialized = true
-
+func New(out io.Writer, prefix string, flag int) *Logger {
+	return &Logger{out: out, prefix: prefix, flag: flag}
 }
 
 //write lock
-func (l *Logging) SetOutput(w io.Writer) {
+func (l *Logger) SetOutput(w io.Writer) {
 	std.mu.Lock()
 	defer std.mu.Unlock()
 	std.out = w
 }
 
 //write
-func (l *Logging) Output(calldepth int, s string) error {
+func (l *Logger) Output(calldepth int, s string) error {
 
 	now := time.Now()
 	var file string
@@ -128,25 +109,19 @@ func SetDebugFlags(debugFlag int) {
 	std.SetDebugFlags(debugFlag)
 }
 
-func (l *Logging) SetFlags(flag int) {
+func (l *Logger) SetFlags(flag int) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.flag = flag
 }
 
-func (l *Logging) SetDebugFlags(debugFlag int) {
+func (l *Logger) SetDebugFlags(debugFlag int) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.debugFlag = debugFlag
 }
 
 func Info(v ...interface{}) {
-	std.prefix = "[info]"
-	std.Output(2, fmt.Sprint(v...))
-}
-
-
-func (l *Logging)Info(v ...interface{}) {
 	std.prefix = "[info]"
 	std.Output(2, fmt.Sprint(v...))
 }
@@ -171,7 +146,7 @@ func Fatal(v ...interface{}) {
 }
 
 //ファイル出力します
-func SetFilePath(filePath string) *Logging {
+func SetFilePath(filePath string) *Logger {
 	std.filePath = filePath
 	return std
 }
@@ -179,7 +154,7 @@ func SetFilePath(filePath string) *Logging {
 //---privete funcs---
 
 //フォーマットを設定します
-func (l *Logging) formatHeader(buf *[]byte, t time.Time, file string, line int) {
+func (l *Logger) formatHeader(buf *[]byte, t time.Time, file string, line int) {
 	*buf = append(*buf, l.prefix...)
 	if l.flag&LUTC != 0 {
 		t = t.UTC()
