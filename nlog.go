@@ -128,7 +128,7 @@ func (l *Logging) SetDebugFlags(debugFlag int) {
 
 func (l *Logging) Info(v string) {
 	l.prefix = "[INFO]"
-	l.Output(l.flag, v)
+	l.Output(2, v)
 }
 
 
