@@ -28,7 +28,7 @@ var Logger = New(os.Stderr, "", LstdFlags)
 type Logging struct {
 	mu        sync.Mutex // ensures atomic writes; protects the following fields
 	prefix    string     // prefix to write at beginning of each line
-	flag      int        // properties
+	Flag      int        // properties
 	out       io.Writer  // destination for output
 	buf       []byte     // for accumulating text to write
 	debugFlag int        // 0 or 1 1 is debug
@@ -37,7 +37,7 @@ type Logging struct {
 
 // log initial set
 func New(out io.Writer, prefix string, flag int) *Logging {
-	return &Logging{out: out, prefix: prefix, flag: flag}
+	return &Logging{out: out, prefix: prefix, Flag: flag}
 }
 
 //write lock
@@ -55,7 +55,7 @@ func (l *Logging) Output(calldepth int, s string) error {
 	var line int
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	if l.flag&(Lshortfile|Llongfile) != 0 {
+	if l.Flag&(Lshortfile|Llongfile) != 0 {
 		// release lock while getting caller info - it's expensive.
 		l.mu.Unlock()
 		var ok bool
@@ -116,13 +116,13 @@ func SetDebugFlags(debugFlag int) {
 func (l *Logging) SetFlags(flag int) {
 	Logger.mu.Lock()
 	defer Logger.mu.Unlock()
-	Logger.flag = flag
+	Logger.Flag = flag
 }
 
 func (l *Logging) GetFlags() int{
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	return l.flag
+	return l.Flag
 }
 
 func (l *Logging) SetDebugFlags(debugFlag int) {
@@ -133,9 +133,9 @@ func (l *Logging) SetDebugFlags(debugFlag int) {
 
 
 func (l *Logging) Info(v ...interface{}) {
-
+	//l.SetFlags(Ldate | Ltime | Lshortfile)
 	l.prefix = "[INFOaaaaaaa]"
-	l.Output(1, fmt.Sprint(v...))
+	l.Output(2, fmt.Sprint(v...))
 }
 
 
@@ -174,11 +174,11 @@ func SetFilePath(filePath string) *Logging {
 //フォーマットを設定します
 func (l *Logging) formatHeader(buf *[]byte, t time.Time, file string, line int) {
 	*buf = append(*buf, l.prefix...)
-	if l.flag&LUTC != 0 {
+	if l.Flag&LUTC != 0 {
 		t = t.UTC()
 	}
-	if l.flag&(Ldate|Ltime|Lmicroseconds) != 0 {
-		if l.flag&Ldate != 0 {
+	if l.Flag&(Ldate|Ltime|Lmicroseconds) != 0 {
+		if l.Flag&Ldate != 0 {
 			year, month, day := t.Date()
 			itoa(buf, year, 4)
 			*buf = append(*buf, '/')
@@ -187,22 +187,22 @@ func (l *Logging) formatHeader(buf *[]byte, t time.Time, file string, line int) 
 			itoa(buf, day, 2)
 			*buf = append(*buf, ' ')
 		}
-		if l.flag&(Ltime|Lmicroseconds) != 0 {
+		if l.Flag&(Ltime|Lmicroseconds) != 0 {
 			hour, min, sec := t.Clock()
 			itoa(buf, hour, 2)
 			*buf = append(*buf, ':')
 			itoa(buf, min, 2)
 			*buf = append(*buf, ':')
 			itoa(buf, sec, 2)
-			if l.flag&Lmicroseconds != 0 {
+			if l.Flag&Lmicroseconds != 0 {
 				*buf = append(*buf, '.')
 				itoa(buf, t.Nanosecond()/1e3, 6)
 			}
 			*buf = append(*buf, ' ')
 		}
 	}
-	if l.flag&(Lshortfile|Llongfile) != 0 {
-		if l.flag&Lshortfile != 0 {
+	if l.Flag&(Lshortfile|Llongfile) != 0 {
+		if l.Flag&Lshortfile != 0 {
 			short := file
 			for i := len(file) - 1; i > 0; i-- {
 				if file[i] == '/' {
