@@ -114,9 +114,9 @@ func SetDebugFlags(debugFlag int) {
 }
 
 func (l *Logging) SetFlags(flag int) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	l.flag = flag
+	Logger.mu.Lock()
+	defer Logger.mu.Unlock()
+	Logger.flag = flag
 }
 
 func (l *Logging) GetFlags() int{
