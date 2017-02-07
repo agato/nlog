@@ -103,6 +103,10 @@ func SetFlags(flag int) {
 	Logger.SetFlags(flag)
 }
 
+func GetFlags() int {
+	return Logger.flag
+}
+
 //デバックの出力を設定します
 //1 = debug on
 func SetDebugFlags(debugFlag int) {
