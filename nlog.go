@@ -130,7 +130,7 @@ func (l *Logging) Info(v ...interface{}) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.prefix = "[INFOaaaaaaa]"
-	l.Output(2, v)
+	l.Output(2, fmt.Sprint(v...))
 }
 
 
