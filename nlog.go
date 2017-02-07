@@ -25,8 +25,6 @@ const (
 //log write variable
 var std = New(os.Stderr, "", LstdFlags)
 
-var NLogger = 1
-
 type Logger struct {
 	mu        sync.Mutex // ensures atomic writes; protects the following fields
 	prefix    string     // prefix to write at beginning of each line
@@ -130,8 +128,9 @@ func (l *Logger) Info(v ...interface{}) {
 }
 
 
-func Info(v ...interface{}) {
-	std.Info(v)
+var Info = func(v ...interface{}) {
+	std.prefix = "[INFO]"
+	std.Output(2, fmt.Sprint(v...))
 }
 
 func Debug(v ...interface{}) {
