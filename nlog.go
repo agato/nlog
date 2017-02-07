@@ -104,7 +104,7 @@ func SetFlags(flag int) {
 }
 
 func GetFlags() int {
-	return Logger.flag
+	return Logger.GetFlags()
 }
 
 //デバックの出力を設定します
@@ -117,6 +117,12 @@ func (l *Logging) SetFlags(flag int) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.flag = flag
+}
+
+func (l *Logging) GetFlags() int{
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.flag
 }
 
 func (l *Logging) SetDebugFlags(debugFlag int) {
