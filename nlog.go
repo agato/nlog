@@ -23,7 +23,7 @@ const (
 )
 
 //log write variable
-var std = New(os.Stderr, "", LstdFlags)
+var Logger = New(os.Stderr, "", LstdFlags)
 
 type Logger struct {
 	mu        sync.Mutex // ensures atomic writes; protects the following fields
@@ -82,8 +82,8 @@ func (l *Logger) Output(calldepth int, s string) error {
 //ファイルに対して書き込みます
 func setOutputFile(buf []byte) {
 
-	if std.filePath != "" {
-		f, err := os.OpenFile(std.filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if Logger.filePath != "" {
+		f, err := os.OpenFile(Logger.filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
 			log.Fatal("error opening file :", err.Error())
 		}
@@ -92,21 +92,20 @@ func setOutputFile(buf []byte) {
 		bw := bufio.NewWriter(writer)
 		bw.Write(buf)
 		bw.Flush()
-
-		//std.SetOutput(f)
+		
 	}
 }
 
 
 //出力フォーマットを設定します
 func SetFlags(flag int) {
-	std.SetFlags(flag)
+	Logger.SetFlags(flag)
 }
 
 //デバックの出力を設定します
 //1 = debug on
 func SetDebugFlags(debugFlag int) {
-	std.SetDebugFlags(debugFlag)
+	Logger.SetDebugFlags(debugFlag)
 }
 
 func (l *Logger) SetFlags(flag int) {
@@ -128,34 +127,33 @@ func (l *Logger) Info(v ...interface{}) {
 }
 
 
-var Info = func(v ...interface{}) {
-	std.prefix = "[INFO]"
-	std.Output(2, fmt.Sprint(v...))
+func Info(v ...interface{}) {
+	Logger.prefix = "[INFO]"
+	Logger.Output(2, fmt.Sprint(v...))
 }
 
 func Debug(v ...interface{}) {
-	std.prefix = "[DEBUG]"
-	if std.debugFlag != DebugOn {
+	Logger.prefix = "[DEBUG]"
+	if Logger.debugFlag != DebugOn {
 		return
 	}
-	std.Output(2, fmt.Sprint(v...))
+	Logger.Output(2, fmt.Sprint(v...))
 }
 
 func Error(v ...interface{}) {
-	std.prefix = "[ERROR]"
-	std.Output(2, fmt.Sprint(v...))
+	Logger.prefix = "[ERROR]"
+	Logger.Output(2, fmt.Sprint(v...))
 }
 
 func Fatal(v ...interface{}) {
-	std.prefix = "[FATAL]"
-	std.Output(2, fmt.Sprint(v...))
+	Logger.prefix = "[FATAL]"
+	Logger.Output(2, fmt.Sprint(v...))
 	os.Exit(1)
 }
 
 //ファイル出力します
-func SetFilePath(filePath string) *Logger {
-	std.filePath = filePath
-	return std
+func SetFilePath(filePath string) {
+	Logger.filePath = filePath
 }
 
 //---privete funcs---
