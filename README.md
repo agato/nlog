@@ -7,7 +7,7 @@ nlog is easy make log file and  level setting available
 * get source using git command
 
 ```
-git clone https://github.com/agato/nlog.git
+go get github.com/agato/nlog.git
 ```
 
 
