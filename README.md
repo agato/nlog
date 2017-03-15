@@ -16,4 +16,9 @@ go get github.com/agato/nlog.git
 
 
 test package
- go get github.com/r7kamura/gospel
+
+```
+go get github.com/r7kamura/gospel
+```
+
+
